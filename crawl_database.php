@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 
-// Thông tin MySQL
+// ===== Thông tin MySQL =====
 $host = "localhost";
 $user = "root";
 $pass = "";
@@ -13,16 +13,27 @@ if ($conn->connect_error) {
     die(json_encode(["status" => "error", "message" => "Kết nối thất bại: " . $conn->connect_error]));
 }
 
-// ===== LINK GOOGLE SHEET PUBLIC DẠNG CSV =====
-// Vào Google Sheets → File → Share → Publish to web → chọn CSV
-$csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQoj0lS4bujEgh8pYEHDvUijdCazrSI7_2Dcj4w8vUnyeMyW1Ypzh1CAOnnqWMHXFSQdRIIoE3PsWg6/pub?gid=0&single=true&output=csv";
+// ===== LINK GOOGLE SHEET PUBLIC DẠNG JSONP =====
+// Link của bạn (gid=0 là sheet đầu tiên)
+$jsonUrl = "https://docs.google.com/spreadsheets/d/1IfVBDmE6XKtFaD4i5smZR17L87TZ3b4RPTdcwCZpQGo/gviz/tq?tqx=out:json&gid=0";
 
-// Mở file CSV từ URL
-if (($handle = fopen($csvUrl, "r")) === FALSE) {
-    die(json_encode(["status" => "error", "message" => "Không đọc được dữ liệu từ Google Sheet"]));
+// Lấy dữ liệu từ Google Sheet
+$response = file_get_contents($jsonUrl);
+if (!$response) {
+    die(json_encode(["status" => "error", "message" => "Ko doc dc du lieu tu Google Sheet"]));
 }
 
-// Chuẩn bị câu lệnh INSERT
+// Cắt bỏ JSONP để lấy JSON thuần
+$start = strpos($response, '{');
+$end   = strrpos($response, '}') + 1;
+$json  = substr($response, $start, $end - $start);
+
+$data = json_decode($json, true);
+if (!$data) {
+    die(json_encode(["status" => "error", "message" => "Ko parse dc JSON tu Google Sheet"]));
+}
+
+// ===== Chuẩn bị câu lệnh INSERT =====
 $stmt = $conn->prepare("INSERT INTO crawl_news (id, title, link, image, pubdate, source, savedtime, category) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         ON DUPLICATE KEY UPDATE
@@ -35,31 +46,29 @@ $stmt = $conn->prepare("INSERT INTO crawl_news (id, title, link, image, pubdate,
                         category = VALUES(category)");
 
 if (!$stmt) {
-    die(json_encode(["status" => "error", "message" => "Lỗi chuẩn bị câu lệnh: " . $conn->error]));
+    die(json_encode(["status" => "error", "message" => "Loi cau lenh: " . $conn->error]));
 }
 
 $stmt->bind_param("isssssss", $id, $title, $link, $image, $pubdate, $source, $savedtime, $category);
 
-$rowIndex = 0;
-while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
-    $rowIndex++;
-    if ($rowIndex == 1) continue; // Bỏ qua dòng tiêu đề
+// ===== Đọc dữ liệu từ Google Sheet JSON =====
+$rows = $data['table']['rows'];
+foreach ($rows as $index => $row) {
+    if ($index == 0) continue; // bỏ qua tiêu đề
 
-    // Gán dữ liệu từ CSV
-    $id        = (int)$data[0];
-    $title     = $data[1];
-    $link      = $data[2];
-    $image     = $data[3];
-    $pubdate   = !empty($data[4]) ? date("Y-m-d H:i:s", strtotime($data[4])) : null;
-    $source    = $data[5];
-    $savedtime = !empty($data[6]) ? date("Y-m-d H:i:s", strtotime($data[6])) : null;
-    $category  = $data[7];
+    $id        = isset($row['c'][0]['v']) ? (int)$row['c'][0]['v'] : 0;
+    $title     = $row['c'][1]['v'] ?? '';
+    $link      = $row['c'][2]['v'] ?? '';
+    $image     = $row['c'][3]['v'] ?? '';
+    $pubdate   = !empty($row['c'][4]['v']) ? date("Y-m-d H:i:s", strtotime($row['c'][4]['v'])) : null;
+    $source    = $row['c'][5]['v'] ?? '';
+    $savedtime = !empty($row['c'][6]['v']) ? date("Y-m-d H:i:s", strtotime($row['c'][6]['v'])) : null;
+    $category  = $row['c'][7]['v'] ?? '';
 
     $stmt->execute();
 }
 
-fclose($handle);
 $stmt->close();
 $conn->close();
 
-echo json_encode(["status" => "success", "message" => "Đã lưu dữ liệu từ Google Sheet vào MySQL"]);
+echo json_encode(["status" => "success", "message" => "Luu du lieu tu Google Sheet vao MySQL !!!"]);
