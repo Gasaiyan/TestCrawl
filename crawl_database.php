@@ -13,8 +13,17 @@ if ($conn->connect_error) {
     die(json_encode(["status" => "error", "message" => "Kết nối thất bại: " . $conn->connect_error]));
 }
 
+// ===== Hàm làm sạch ký tự HTML Entity =====
+function cleanText($str) {
+    if (!$str) return '';
+    // Giải mã 2 lần để xử lý cả trường hợp &amp;apos;
+    $decoded = html_entity_decode($str, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $decoded = html_entity_decode($decoded, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    // Loại bỏ khoảng trắng dư thừa
+    return trim($decoded);
+}
+
 // ===== LINK GOOGLE SHEET PUBLIC DẠNG JSONP =====
-// Link của bạn (gid=0 là sheet đầu tiên)
 $jsonUrl = "https://docs.google.com/spreadsheets/d/1IfVBDmE6XKtFaD4i5smZR17L87TZ3b4RPTdcwCZpQGo/gviz/tq?tqx=out:json&gid=0";
 
 // Lấy dữ liệu từ Google Sheet
@@ -51,19 +60,22 @@ if (!$stmt) {
 
 $stmt->bind_param("isssssss", $id, $title, $link, $image, $pubdate, $source, $savedtime, $category);
 
-// ===== Đọc dữ liệu từ Google Sheet JSON = ====
+// ===== Đọc dữ liệu từ Google Sheet JSON =====
 $rows = $data['table']['rows'];
 foreach ($rows as $index => $row) {
     if ($index == 0) continue; // bỏ qua tiêu đề
 
     $id        = isset($row['c'][0]['v']) ? (int)$row['c'][0]['v'] : 0;
-    $title     = html_entity_decode($row['c'][1]['v'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $title     = cleanText($row['c'][1]['v'] ?? '');
     $link      = $row['c'][2]['v'] ?? '';
     $image     = $row['c'][3]['v'] ?? '';
     $pubdate   = !empty($row['c'][4]['v']) ? date("Y-m-d H:i:s", strtotime($row['c'][4]['v'])) : null;
-    $source    = html_entity_decode($row['c'][5]['v'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
-    $savedtime = !empty($row['c'][6]['v']) ? date("Y-m-d H:i:s") : null;
-    $category  = html_entity_decode($row['c'][7]['v'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $source    = cleanText($row['c'][5]['v'] ?? '');
+    $savedtime = date("Y-m-d H:i:s"); // lúc lưu
+    $category  = cleanText($row['c'][7]['v'] ?? '');
+
+    // Debug check xem có còn &apos; không
+    // echo "Before Insert: $title\n";
 
     $stmt->execute();
 }
