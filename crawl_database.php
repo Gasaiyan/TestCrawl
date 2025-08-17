@@ -51,19 +51,19 @@ if (!$stmt) {
 
 $stmt->bind_param("isssssss", $id, $title, $link, $image, $pubdate, $source, $savedtime, $category);
 
-// ===== Đọc dữ liệu từ Google Sheet JSON =====
+// ===== Đọc dữ liệu từ Google Sheet JSON = ====
 $rows = $data['table']['rows'];
 foreach ($rows as $index => $row) {
     if ($index == 0) continue; // bỏ qua tiêu đề
 
     $id        = isset($row['c'][0]['v']) ? (int)$row['c'][0]['v'] : 0;
-    $title     = $row['c'][1]['v'] ?? '';
+    $title     = html_entity_decode($row['c'][1]['v'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
     $link      = $row['c'][2]['v'] ?? '';
     $image     = $row['c'][3]['v'] ?? '';
     $pubdate   = !empty($row['c'][4]['v']) ? date("Y-m-d H:i:s", strtotime($row['c'][4]['v'])) : null;
-    $source    = $row['c'][5]['v'] ?? '';
-    $savedtime = !empty($row['c'][6]['v']) ? date("Y-m-d H:i:s", strtotime($row['c'][6]['v'])) : null;
-    $category  = $row['c'][7]['v'] ?? '';
+    $source    = html_entity_decode($row['c'][5]['v'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $savedtime = !empty($row['c'][6]['v']) ? date("Y-m-d H:i:s") : null;
+    $category  = html_entity_decode($row['c'][7]['v'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
     $stmt->execute();
 }
