@@ -71,7 +71,7 @@ foreach ($rows as $index => $row) {
     $image     = $row['c'][3]['v'] ?? '';
     $pubdate   = !empty($row['c'][4]['v']) ? date("Y-m-d H:i:s", strtotime($row['c'][4]['v'])) : null;
     $source    = cleanText($row['c'][5]['v'] ?? '');
-    $savedtime = date("Y-m-d H:i:s"); // lúc lưu
+    $savedtime = date("Y-m-d H:i:s");
     $category  = cleanText($row['c'][7]['v'] ?? '');
 
     // Debug check xem có còn &apos; không
