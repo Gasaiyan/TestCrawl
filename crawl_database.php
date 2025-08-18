@@ -5,7 +5,7 @@ header('Content-Type: application/json; charset=utf-8');
 $host = "localhost";
 $user = "root";
 $pass = "";
-$db   = "manager_tai";
+$db   = "crawl_news";
 
 // Kết nối MySQL
 $conn = new mysqli($host, $user, $pass, $db);
