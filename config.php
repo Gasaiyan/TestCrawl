@@ -6,7 +6,7 @@ const _ACTION = 'index';
 
 //khai báo database
 const _HOST = 'localhost';
-const _DB = 'manager_tai';
+const _DB = 'crawl_news';
 const _USER = 'root';
 const _PASS = '';
 const _DRIVER = 'mysql';
@@ -16,7 +16,7 @@ const _DEBUG = true;
 
 //thiết lập host
 
-define('_HOST_URL','http://'.$_SERVER['HTTP_HOST'].'/manager_course');
+define('_HOST_URL','http://'.$_SERVER['HTTP_HOST'].'/testcrawl');
 define('_HOST_URL_TEMPLATES',_HOST_URL.'/templates');
 
 //thiết lập path
