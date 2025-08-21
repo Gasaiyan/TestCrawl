@@ -3,86 +3,102 @@ if(!defined('_TAI')) {
     die('Truy cập không hợp lệ');
 }
 
-// Truy vấn nhiều dòng dữ liệu
-function getAll ($sql) {
-    global $conn;
-    $stm = $conn -> prepare($sql);
-    $stm -> execute();
-    $result = $stm ->fetchAll(PDO::FETCH_ASSOC);
-    return $result;
+$host = "localhost";
+$user = "root";
+$pass = "";
+$db   = "crawl_news";
+
+// Kết nối MySQLi (không dùng PDO nữa)
+$conn = new mysqli($host, $user, $pass, $db);
+if ($conn->connect_error) {
+    die("Kết nối thất bại: " . $conn->connect_error);
 }
 
-
-//Đếm số dòng trả về
-function getRows($sql){
+// Truy vấn nhiều dòng dữ liệu
+function getAll($sql) {
     global $conn;
-    $stm = $conn -> prepare($sql);
-    $stm -> execute();
-    $result =  $stm ->rowCount();
-    return $result;
+    $result = $conn->query($sql);
+    if(!$result) {
+        die("Lỗi query: " . $conn->error);
+    }
+    $data = [];
+    while($row = $result->fetch_assoc()) {
+        $data[] = $row;
+    }
+    return $data;
+}
+
+// Đếm số dòng trả về
+function getRows($sql) {
+    global $conn;
+    $result = $conn->query($sql);
+    if(!$result) {
+        die("Lỗi query: " . $conn->error);
+    }
+    return $result->num_rows;
 }
 
 // Truy vấn 1 dòng dữ liệu
 function getOne($sql) {
     global $conn;
-    $stm = $conn -> prepare($sql);
-    $stm -> execute();
-    $result = $stm ->fetch(PDO::FETCH_ASSOC);
-    return $result;
+    $result = $conn->query($sql);
+    if(!$result) {
+        die("Lỗi query: " . $conn->error);
+    }
+    return $result->fetch_assoc();
 }
 
-//Insert dữ liệu 
-function insert($table, $data){
+// Insert dữ liệu
+function insert($table, $data) {
     global $conn;
-
-    $keys = array_keys($data);
-    $cot = implode(', ',$keys);
-    $place = ':'.implode(', :', $keys);
-    $sql = "INSERT INTO $table ($cot) VALUES($place)";
-    $stm = $conn -> prepare($sql);
-    $rel = $stm ->execute($data);
-
+    $columns = implode(", ", array_keys($data));
+    $values  = "'" . implode("','", array_map([$conn, 'real_escape_string'], $data)) . "'";
+    $sql = "INSERT INTO $table ($columns) VALUES ($values)";
+    $rel = $conn->query($sql);
+    if(!$rel) {
+        die("Lỗi insert: " . $conn->error);
+    }
     return $rel;
 }
 
 // Update dữ liệu
-function update($table, $data, $condition = ''){
+function update($table, $data, $condition = '') {
     global $conn;
-    $update = '';
+    $updateArr = [];
+    foreach($data as $key => $value) {
+        $updateArr[] = "$key='" . $conn->real_escape_string($value) . "'";
+    }
+    $update = implode(", ", $updateArr);
 
-    foreach($data as $key => $value){
-        $update .= $key . '=:' . $key.',';
+    $sql = "UPDATE $table SET $update";
+    if(!empty($condition)) {
+        $sql .= " WHERE $condition";
     }
 
-    $update = trim($update, ',');
-
-    if(!empty($condition)){
-        
-        $sql = "UPDATE $table SET $update WHERE  $condition";
-    }else {
-        $sql = "UPDATE $table SET $update";
+    $rel = $conn->query($sql);
+    if(!$rel) {
+        die("Lỗi update: " . $conn->error);
     }
-    $tmp = $conn ->prepare($sql);
-
-    $rel = $tmp -> execute($data);
     return $rel;
 }
 
-//Hàm xóa dữ liệu
-function delete($table, $condition = ''){
+// Xóa dữ liệu
+function delete($table, $condition = '') {
     global $conn;
-    if (!empty($condition)){
-        $sql = "DELETE FROM $table WHERE $condition";
-    }else{
-        $sql = "DELETE FROM $table";
+    $sql = "DELETE FROM $table";
+    if(!empty($condition)) {
+        $sql .= " WHERE $condition";
     }
-    $stm = $conn -> prepare($sql);
-   $rel = $stm -> execute();
-   return $rel;
+    $rel = $conn->query($sql);
+    if(!$rel) {
+        die("Lỗi delete: " . $conn->error);
+    }
+    return $rel;
 }
 
-//Hàm lấy ID dòng dữ liệu mới insert
-function lastID(){
+// Lấy ID dòng dữ liệu mới insert
+function lastID() {
     global $conn;
-    return $conn ->lastInsertId();
+    return $conn->insert_id;
 }
+?>

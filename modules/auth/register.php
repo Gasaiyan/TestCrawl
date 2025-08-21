@@ -39,15 +39,6 @@ if(isPost()){
         }
     }
 
-    //Validate phone
-    if(empty($filter['phone'])){
-        $errors['phone']['required'] = 'Số điện thoại bắt buộc phải nhập';
-    }else {
-        if (!isPhone($filter['phone'])){
-            $errors['phone']['isPhone'] = 'Số điện thoại không đúng định dạng';
-        }
-    }
-
     //Validate password
     if(empty(trim($filter['password']))){
         $errors['password']['required'] = 'Mật khẩu bắt buộc phải nhập';
@@ -72,11 +63,9 @@ if(isPost()){
         $data = [
             'fullname' => $filter['fullname'],
             // 'address' => $filter['address'],
-            'phone' => $filter['phone'],
             'password' => password_hash($filter['password'], PASSWORD_DEFAULT),
             'email' => $filter['email'],
             'active_token' => $active_token,
-            'group_id' => 1,
             'created_at' => date('Y:m:d H:i:s')
         ];
 
@@ -158,18 +147,6 @@ if(isPost()){
                         <?php
                         if(!empty($errorsArr)){
                             echo formError($errorsArr, 'email');
-                        }
-                        ?>
-                    </div>
-                    <!-- Số dien thoại -->
-                    <div data-mdb-input-init class="form-outline mb-4">
-                        <input name="phone" type="text" value="<?php 
-                        if(!empty($oldData)){
-                            echo oldData($oldData, 'phone');
-                        }
-                        ?>" class="form-control form-control-lg" placeholder="Nhập số điện thoại " />
-                        <?php if(!empty($errorsArr)){
-                            echo formError($errorsArr, 'phone');
                         }
                         ?>
                     </div>
