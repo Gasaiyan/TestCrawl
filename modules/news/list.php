@@ -2,198 +2,145 @@
 if(!defined('_TAI')) {
     die('Truy cập không hợp lệ');
 }
-
 $data = [
     'title' => 'Trang chủ'
 ];
-
-//Xử lý phân trang
-$maxData = getRows("SELECT id FROM crawl_news"); //Tổng dữ liệu
-$perPage = 10 ; //Số dòng dữ liệu một trang
-$maxPage=ceil($maxData/$perPage);
-$offset = 0;
-$page = 1;
-//get page 
-if(isset($filter['page'])){
-    $page = $filter['page'];
-}
-
-if($page > $maxPage || $page < 1){
-    $page = 1;
-}
-
-    $offset = ($page -1) * $perPage;
-
-// Lấy dữ liệu tin tức
-$sql = "SELECT * FROM crawl_news ORDER BY pubDate DESC LIMIT $perPage OFFSET $offset";
-$listNews = getAll($sql);
-
-
 ?>
+<!DOCTYPE html>
+<html lang="vi">
 
-<style>
-.news-list {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin: 20px;
-}
-
-.news-item {
-    display: flex;
-    gap: 15px;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 10px;
-}
-
-.news-item img {
-    width: 160px;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 5px;
-}
-
-.news-info h4 {
-    margin: 0;
-    font-size: 18px;
-}
-
-.news-info h4 a {
-    color: #333;
-    text-decoration: none;
-}
-
-.news-info h4 a:hover {
-    color: #d33;
-}
-
-.news-info .source {
-    font-size: 13px;
-    color: #666;
-    margin-right: 10px;
-}
-
-.news-info .time-rel {
-    font-size: 13px;
-    color: #999;
-}
-
-.pagination {
-    margin: 20px;
-    text-align: center;
-}
-
-.pagination a {
-    display: inline-block;
-    padding: 6px 12px;
-    margin: 0 4px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    text-decoration: none;
-    color: #333;
-}
-
-.pagination a.active {
-    background: #d33;
-    color: #fff;
-    border-color: #d33;
-}
-</style>
-
-<div class="news-list">
-    <?php
-if(!empty($listNews)){
-    foreach($listNews as $item){
-?>
-    <article class="news-item">
-        <div class="news-image">
-            <a href="<?= $item['link'] ?>" target="_blank">
-                <img src="<?= $item['image'] ?>" alt="<?= htmlspecialchars($item['title']) ?>">
-            </a>
-        </div>
-        <div class="news-info">
-            <h4>
-                <a href="<?= $item['link'] ?>" target="_blank">
-                    <?= $item['title'] ?>
-                </a>
-            </h4>
-            <div>
-                <span class="source"><?= $item['source'] ?></span>
-                <span class="time-rel"><?= date("d/m/Y H:i", strtotime($item['pubDate'])) ?></span>
-            </div>
-        </div>
-    </article>
-    <?php
+<head>
+    <meta charset="UTF-8">
+    <title><?= $data['title'] ?></title>
+    <style>
+    .news-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin: 20px;
     }
-}else{
-    echo "<p>Không có dữ liệu.</p>";
-}
-?>
-</div>
 
-<!-- Phân trang -->
-<nav aria-label="Page navigation example">
-    <ul class="pagination">
-        <!-- Xử lý nút 'Trước' -->
+    .news-item {
+        display: flex;
+        gap: 15px;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+    }
 
-        <?php 
-            if($page>1):
-            ?>
-        <li class="page-item"><a class="page-link"
-                href="?<?php echo $queryString?>&page=<?php echo $page-1;?>">Trước</a></li>
-        <?php 
-            endif;
-            ?>
-        <!-- Tính vị trí bắt đầu -->
+    .news-item img {
+        width: 160px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 5px;
+    }
 
-        <?php
-                $start = $page - 1;
-                if($start<1){
-                    $start = 1;
-                }
-            ?>
+    .news-info h4 {
+        margin: 0;
+        font-size: 18px;
+    }
 
-        <?php 
-            if($start>1):
-            ?>
-        <li class="page-item"><a class="page-link" href="?<?php echo $queryString?>&page=<?php echo $page-1;?>">...</a>
-        </li>
-        <?php 
-            endif;
+    .news-info h4 a {
+        color: #333;
+        text-decoration: none;
+    }
 
-            $end = $page + 1;
-            if($end>$maxPage){
-                $end = $maxPage;
-            }
-            
-            ?>
+    .news-info h4 a:hover {
+        color: #d33;
+    }
 
+    .news-info .source {
+        font-size: 13px;
+        color: #666;
+        margin-right: 10px;
+    }
 
-        <?php for($i = $start; $i<=$end; $i++):?>
+    .news-info .time-rel {
+        font-size: 13px;
+        color: #999;
+    }
 
-        <li class="page-item <?php echo($page == $i) ? 'active': false?>"><a class="page-link"
-                href="?<?php echo $queryString?>&page=<?php echo $i; ?>"><?php echo $i;?></a>
-        </li>
+    #loading {
+        text-align: center;
+        padding: 10px;
+        display: none;
+        color: #555;
+    }
+    </style>
+</head>
 
-        <?php 
-            endfor;
-                if($end < $maxPage):
-            ?>
-        <li class="page-item"><a class="page-link" href="?<?php echo $queryString?>&page=<?php echo $page+1;?>">...</a>
-        </li>
+<body>
+    <div class="news-list" id="newsList"></div>
+    <div id="loading">Đang tải...</div>
 
-        <?php endif; ?>
+    <script>
+    let page = 1;
+    let loading = false;
 
-        <!-- Xử lý nút 'Sau' -->
+    async function loadNews() {
+        if (loading) return;
+        loading = true;
+        document.getElementById("loading").style.display = "block";
 
+        const res = await fetch("modules/news/load_news.php?page=" + page);
 
-        <?php 
-            if($page<$maxPage):
-            ?>
-        <li class="page-item"><a class="page-link" href="?<?php echo $queryString?>&page=<?php echo $page+1;?>">Sau</a>
-        </li>
-        <?php 
-            endif;
-            ?>
-    </ul>
-</nav>
+        const data = await res.json();
+
+        if (data.length > 0) {
+            const container = document.getElementById("newsList");
+            data.forEach(item => {
+                const article = document.createElement("article");
+                article.classList.add("news-item");
+                article.innerHTML = `
+                    <div class="news-image">
+                        <a href="${item.link}" target="_blank">
+                            <img src="${item.image}" alt="${item.title}" loading="lazy">
+                        </a>
+                    </div>
+                    <div class="news-info">
+                        <h4><a href="${item.link}" target="_blank">${item.title}</a></h4>
+                        <div>
+                            <span class="source">${item.source}</span>
+                            <span class="time-rel">${item.pubDate}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(article);
+            });
+            page++;
+        } else {
+            // Nếu hết dữ liệu thì bỏ observer
+            observer.disconnect();
+            document.getElementById("loading").innerText = "Hết tin tức";
+        }
+
+        if (data.length > 0) {
+            // ... append dữ liệu
+            page++;
+            document.getElementById("loading").style.display = "block"; // luôn giữ loading hiển thị
+            document.getElementById("loading").innerText = "Kéo xuống để tải thêm...";
+        } else {
+            observer.disconnect();
+            document.getElementById("loading").innerText = "Hết tin tức";
+        }
+        loading = false;
+
+    }
+
+    // Tự động load khi tới cuối trang
+    const observer = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) {
+            loadNews();
+        }
+    }, {
+        rootMargin: "0px 0px 200px 0px",
+        threshold: 0.1
+    });
+
+    observer.observe(document.getElementById("loading"));
+
+    // Load lần đầu
+    loadNews();
+    </script>
+</body>
+
+</html>
