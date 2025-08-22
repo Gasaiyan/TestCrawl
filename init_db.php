@@ -17,7 +17,7 @@ if ($conn->connect_error) {
 
 // Kiểm tra database đã tồn tại chưa
 $dbCheck = $conn->query("SHOW DATABASES LIKE '$dbname'");
-if ($dbCheck && $dbCheck->num_rows > 0) {
+if ($dbCheck && $dbCheck -> num_rows > 0) {
     echo "⚠️ Database `$dbname` đã tồn tại.<br>";
 
     // Chọn database
